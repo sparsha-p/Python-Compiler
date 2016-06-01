@@ -1,0 +1,5 @@
+*.pyc
+*~
+*.sh
+test
+sample
