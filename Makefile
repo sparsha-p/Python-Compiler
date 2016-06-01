@@ -14,11 +14,15 @@ main.o: main.c
             
 clean: 
 	@rm -rf *.o
-	@rm -rf *.h
+	@rm -rf y.tab.h
 	@rm -rf *.cxx
 	@rm -rf *~ 
 	@rm -rf *.output
 	@rm -rf *.js
+	@rm -rf *.pyc
 
 run:
 	@./pyc.o palindromeString.py test.js
+
+test:
+	@./pyc.o test.py test.js
