@@ -19,7 +19,8 @@
 identifier      [_a-zA-Z][_a-zA-Z0-9]*
 integer			[0-9]*
 defined         "elif"|"global"|"assert"|"else"|"except"|"pass"|"exec"|"raise"|"finally"|"is"|"lambda"|"try"|"del"|"yield"
-operator "<"|">"|"=="|">="|"<="|"!="|"="
+operator "<"|">"|"=="|">="|"<="|"!="
+augassign "+="|"-="|"*="|"/="
 quote1          "\'"[^'\\]*"\'"
 quote2          "\""[^"\\]*"\""
 
@@ -53,7 +54,6 @@ quote2          "\""[^"\\]*"\""
 				               BEGIN normal;
 				           }
 				         }
-
 <normal>\n\r|\r\n|\n|\r {
 				            yylval.s = yytext;
 				            current_line_indent = 0; 
@@ -63,21 +63,7 @@ quote2          "\""[^"\\]*"\""
 <normal>#[^(\n\r)|^(\r\n)|^\n|^\r]+(\n\r|\r\n|\n|\r)     							{
 							current_line_indent = 0; 
 							BEGIN indent;
-						}
-
-<normal>{defined}       {
-				            yylval.s = yytext;
-				            return DEFINED;
-				        }
-<normal>{operator}		{	
-							yylval.s = yytext;
-							return OPERA;	
-						}
-<normal>{integer} 		{	
-							yylval.s = yytext;
-							return INTEGER;	
-						}
-
+						}						
 <normal>def             {   
 							yylval.i = indent_level/4;
 							return DEF; 	
@@ -108,33 +94,77 @@ quote2          "\""[^"\\]*"\""
 <normal>or				return OR;
 <normal>True			return TRUE;
 <normal>False			return FALSE;
-
 <normal>":"             return COLON;
-<normal>"."             return DOT;
-<normal>","             return COMMA;
-<normal>"("             return LBRACE;
-<normal>")"             return RBRACE;
-<normal>"["				return LBRACKET;
-<normal>"]"				return RBRACKET;
-<normal>"+"				return ADD;
-<normal>"-"				return SUB;
-<normal>"*"             return STAR;
-
+<normal>"."             {
+							yylval.s = yytext;
+							return DOT;
+						}
+<normal>","             {
+							yylval.s = yytext;
+							return COMMA;
+						}
+<normal>"("             {
+							yylval.s = yytext;
+							return LBRACE;
+						}
+<normal>")"             {
+							yylval.s = yytext;
+							return RBRACE;
+						}
+<normal>"["				{
+							yylval.s = yytext;
+							return LBRACKET;
+						}
+<normal>"]"				{
+							yylval.s = yytext;
+							return RBRACKET;
+						}
+<normal>"="				{
+							yylval.s = yytext;
+							return EQ;
+						}
+<normal>"+"				{
+							yylval.s = yytext;
+							return ADD;
+						}
+<normal>"-"				{
+							yylval.s = yytext;
+							return SUB;
+						}
+<normal>"*"             {
+							yylval.s = yytext;
+							return STAR;
+						}
+<normal>{defined}       {
+				            yylval.s = yytext;
+				            return DEFINED;
+				        }
+<normal>{operator}		{	
+							yylval.s = yytext;
+							return OPERA;	
+						}
+<normal>{integer} 		{	
+							yylval.s = yytext;
+							return INTEGER;	
+						}
 <normal>{identifier}    {
 							yylval.i = indent_level/4;
 				            yylval.s = yytext;
 				            return NAME;
 				        }
+<normal>{augassign}	    {
+				            yylval.s = yytext;
+				            return AUGASSIGN;							
+						}
 <normal>{quote1}        {
 				            yylval.s = yytext;
-				            return MESSAGE;
+				            return QUOTED;
 				        }
 <normal>{quote2}        {
 				            yylval.s = yytext;
-				            return MESSAGE;
+				            return QUOTED;
 				        }
 <normal>[ \t]+          /* skip whitespaces */{}
-
 <normal><<EOF>>         { return 0; }
 %%
 int yywrap(void) {

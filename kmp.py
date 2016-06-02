@@ -8,7 +8,9 @@ def KMP(text, pattern):
     pattern = list(pattern)
 
     # build table of shift amounts
-    shifts = [1] * (len(pattern) + 1)
+    shifts = [1]
+    for pos in range(len(pattern)):
+    	shifts.append(1)
     shift = 1
     for pos in range(len(pattern)):
         while shift <= pos and pattern[pos] != pattern[pos-shift]:
@@ -18,8 +20,9 @@ def KMP(text, pattern):
     # do the actual search
     startPos = 0
     matchLen = 0
-    for c in text:
-        while matchLen == len(pattern) or matchLen >= 0 and pattern[matchLen] != c:
+    l = len(text)
+    for c in range(l):
+        while matchLen == len(pattern) or matchLen >= 0 and pattern[matchLen] != text[c]:
             startPos += shifts[matchLen]
             matchLen -= shifts[matchLen]
         matchLen += 1

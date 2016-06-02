@@ -12,7 +12,7 @@
     int yylex(void);
     void yyerror(char* msg);
 %}
-%token MESSAGE CLASS
+%token QUOTED
 %token DEFINED
 %token NEWLINE
 %token NAME
@@ -20,7 +20,8 @@
 %token PRINT
 %token DEF FOR WHILE IF
 %token BREAK CONTINUE RETURN
-%token OPERA IN NOT OR AND STAR
+%token OPERA IN NOT OR AND STAR EQ
+%token AUGASSIGN
 %token LBRACE RBRACE LBRACKET RBRACKET COLON DOT COMMA
 %token SUB ADD
 %token INTEGER TRUE FALSE
@@ -33,7 +34,8 @@ single_input: input
 		$$.s = $1.s;
 		fprintf(outFile_p, "%s", $$.s.c_str());
 	}
-;	
+;
+
 input: /* empty */ 
      | input NEWLINE { $$.s = $1.s + ";" + $2.s; }
      | input stmt    { $$.s = $1.s + $2.s; }
@@ -67,11 +69,23 @@ flow_stmt: return_stmt { $$ = $1; }
 print_stmt: PRINT NAME 
 	{
 		$$.i = $1.i; 
-		$$.s = "print " + $2.s; 
+		$$.s = "console.log(" + $2.s + ")"; 
 	}
 ;
-expr_stmt: comparison { $$ = $1; }
-; 
+expr_stmt: test_list AUGASSIGN test_list 
+	{ 
+		$$.i = $1.i; 
+		$$.s = $1.s + $2.s + $3.s;
+	}
+	| rightside { $$ = $1; }
+;
+rightside: test_list { $$ = $1; }
+	| rightside EQ test_list
+	{
+		$$.i = $1.i; 
+		$$.s = $1.s + $2.s + $3.s;
+	}
+;
 return_stmt: RETURN flag 
 	{
 		$$.i = $1.i; 
@@ -97,36 +111,23 @@ funcdef: DEF NAME parameters COLON suite
 ;
 parameters: LBRACE varargslist RBRACE
 	{
-		$$.s = "(" + $2.s + ")";
+		$$.s = $1.s + $2.s + $3.s;
 	}
 ;	
 varargslist: /* empty */
 	| NAME { $$.s = $1.s; }
-	| varargslist COMMA NAME { $$.s = $1.s + "," + $3.s; }
+	| varargslist COMMA NAME { 	$$.s = $1.s + $2.s + $3.s; }
 ;
 
 /* for */
-for_stmt: FOR exprlist IN func_call COLON suite
+for_stmt: FOR exprlist IN test_list COLON suite
 	{
 		$$.i = $1.i;
 		$$.s = "for (" + $2.s + "=0;" + $2.s + "<" + $4.s + ";" + $2.s + "++)" + $6.s; 
 	}
 ;
 exprlist: NAME { $$.s = $1.s; }
-	| NAME COMMA NAME { $$.s = $1.s + "," + $3.s; }
-;
-func_call: variable { $$ = $1; }
-	| NAME LBRACE NAME RBRACE 
-	{ 
-		$$.i = $1.i;
-		if ($1.s == "len") {
-			$$.s = $3.s + ".length";
-		} else if ( $1.s == "range" ){
-			$$.s = $3.s;
-		} else {
-			$$.s = $1.s + "(" + $3.s + ")";
-		}
-	}
+	| NAME COMMA NAME { $$.s = $1.s + $2.s + $3.s; }
 ;
 
 /* if */
@@ -136,39 +137,106 @@ if_stmt: IF test COLON suite
 		$$.s = "if (" + $2.s + ")" + $4.s;
 	}
 ;
-test: or_test { $$.s = $1.s; }
+
+/* expression */
+test_list: test { $$ = $1; }
+	| test_list COMMA test 
+	{
+		$$.i = $1.i;
+		$$.s = $1.s + $2.s + $3.s;
+	}
 ;
-or_test: and_test { $$.s = $1.s; }
-	| or_test OR and_test { $$.s = $1.s + " || " + $3.s;}
+test: or_test { $$ = $1; }
 ;
-and_test: not_test { $$.s = $1.s; }
-	| and_test AND not_test { $$.s = $1.s + " && " + $3.s; }
+or_test: and_test { $$ = $1; }
+	| or_test OR and_test 
+	{ 
+		$$.i = $1.i;
+		$$.s = $1.s + " || " + $3.s;
+	}
+;
+and_test: not_test { $$ = $1; }
+	| and_test AND not_test 
+	{ 
+		$$.i = $1.i;
+		$$.s = $1.s + " && " + $3.s; 
+	}
 ;
 not_test: NOT not_test { $$.s = "!" + $2.s; }
-	| comparison { $$.s = $1.s; }
+	| comparison { $$ = $1; }
 ;
 comparison: expr { $$ = $1; }
-	| comparison OPERA expr 
+	| expr comp_op comparison
 	{
 		$$.i = $1.i; 
 		$$.s = $1.s + $2.s + $3.s; 
 	}
 ;
-expr: func_call { $$ = $1; }
-	| array_call { $$ = $1; }
+comp_op: OPERA { $$ = $1; }
 ;
-array_call: NAME LBRACKET arith_expr RBRACKET 
+expr: term { $$ = $1; }
+	| term ADD expr
 	{
 		$$.i = $1.i; 
-		$$.s = $1.s + "[" + $3.s + "]";
+		$$.s = $1.s + $2.s + $3.s; 	
+	}
+	| term SUB expr
+	{
+		$$.i = $1.i; 
+		$$.s = $1.s + $2.s + $3.s;
+	}
+;
+term: factor { $$ = $1; }
+	| factor STAR term
+	{
+		$$.i = $1.i; 
+		$$.s = $1.s + $2.s + $3.s;
 	}
 ;	
-arith_expr: variable { $$.s = $1.s;}
-	| arith_expr ADD variable { $$.s = $1.s + "+" + $3.s; }
-	| arith_expr SUB variable { $$.s = $1.s + "-" + $3.s; }
+factor: atom { $$ = $1; }
 ;
-variable: NAME { $$.s = $1.s; }
-	| INTEGER { $$.s = $1.s; }
+atom: LBRACE expr RBRACE
+	{
+		$$.s = $1.s + $2.s + $3.s;
+	}
+	| LBRACKET expr RBRACKET
+	{
+		$$.s = $1.s + $2.s + $3.s;
+	}
+	| expr DOT expr 
+	{
+		$$.i = $1.i;
+		$$.s = $1.s + $2.s + $3.s;
+	}
+	| func_call { $$ = $1; }
+	| array_call { $$ = $1; }
+	| variable { $$ = $1; }
+;
+func_call: NAME LBRACE expr RBRACE 
+	{ 
+		$$.i = $1.i;
+		if ($1.s == "len") {
+			$$.s = $3.s + ".length";
+		} else if ( $1.s == "range" ) {
+			$$.s = $3.s;
+		} else if ( $1.s == "list") {
+			$$.s = $3.s;
+		} else if ($1.s == "append") {
+			$$.s = "push" + $2.s + $3.s + $4.s;
+		} else {
+			$$.s = $1.s + $2.s + $3.s + $4.s;
+		}
+	}
+;
+array_call: NAME LBRACKET expr RBRACKET
+	{
+		$$.i = $1.i;
+		$$.s = $1.s + $2.s + $3.s + $4.s;
+	}
+;
+variable: NAME { $$ = $1; }
+	| INTEGER { $$ = $1; }
+	| QUOTED { $$ = $1; }
 ;
 
 /* while */
