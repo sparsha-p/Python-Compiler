@@ -19,8 +19,7 @@ def KMP(text, pattern):
     startPos = 0
     matchLen = 0
     for c in text:
-        while matchLen == len(pattern) or \
-              matchLen >= 0 and pattern[matchLen] != c:
+        while matchLen == len(pattern) or matchLen >= 0 and pattern[matchLen] != c:
             startPos += shifts[matchLen]
             matchLen -= shifts[matchLen]
         matchLen += 1

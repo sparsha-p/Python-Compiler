@@ -1,9 +1,7 @@
 %{
-	#include <stdio.h>
-    #include <string.h>
-    #include <iostream>
+	#include "dstruct.h"
 
-	#define YYSTYPE string
+	#define YYSTYPE line
     using namespace std;
     #include "y.tab.h"
 	/* globals to track current indentation */
@@ -17,7 +15,7 @@
 
 %x indent
 %s normal
-
+			
 identifier      [_a-zA-Z][_a-zA-Z0-9]*
 integer			[0-9]*
 defined         "elif"|"global"|"assert"|"else"|"except"|"pass"|"exec"|"raise"|"finally"|"is"|"lambda"|"try"|"del"|"yield"
@@ -39,6 +37,9 @@ quote2          "\""[^"\\]*"\""
 							}
 							else{ return 0;}
 						}
+<indent>#[^(\n\r)|^(\r\n)|^\n|^\r]+(\n\r|\r\n|\n|\r) 							{
+							current_line_indent = 0;
+						}						
 <indent>.		        {
 				           unput(*yytext);
 				           if (current_line_indent > indent_level) {
@@ -54,32 +55,54 @@ quote2          "\""[^"\\]*"\""
 				         }
 
 <normal>\n\r|\r\n|\n|\r {
-				            yylval = yytext;
+				            yylval.s = yytext;
 				            current_line_indent = 0; 
 				            BEGIN indent;
 				            return NEWLINE;
 				        }
-<normal>"#"     		{}
+<normal>#[^(\n\r)|^(\r\n)|^\n|^\r]+(\n\r|\r\n|\n|\r)     							{
+							current_line_indent = 0; 
+							BEGIN indent;
+						}
 
 <normal>{defined}       {
-				            //strcpy(yylval.stval, yytext);
-				            yylval = yytext;
+				            yylval.s = yytext;
 				            return DEFINED;
 				        }
 <normal>{operator}		{	
-							yylval = yytext;
+							yylval.s = yytext;
 							return OPERA;	
 						}
 <normal>{integer} 		{	
-							yylval = yytext;
+							yylval.s = yytext;
 							return INTEGER;	
 						}
 
-<normal>def             {   return DEF; 	}
-<normal>for             {	return FOR; 	}
-<normal>if              {	return IF;		}
+<normal>def             {   
+							yylval.i = indent_level/4;
+							return DEF; 	
+						}
+<normal>for             {	
+							yylval.i = indent_level/4;
+							return FOR; 	
+						}
+<normal>if              {	
+							yylval.i = indent_level/4;
+							return IF;
+						}
+<normal>while           {	
+							yylval.i = indent_level/4;
+							return WHILE;
+						}
+<normal>print           {	
+							yylval.i = indent_level/4;
+							return PRINT;
+						}					
 <normal>in				{	return IN;		}
-<normal>return 			{	return RETURN;	}
+<normal>return 			{
+							yylval.i = indent_level/4;	
+							return RETURN;	
+						}
 <normal>not				return NOT;
 <normal>and				return AND;
 <normal>or				return OR;
@@ -98,18 +121,16 @@ quote2          "\""[^"\\]*"\""
 <normal>"*"             return STAR;
 
 <normal>{identifier}    {
-				            //strcpy(yylval.stval, yytext);
-				            yylval = yytext;
+							yylval.i = indent_level/4;
+				            yylval.s = yytext;
 				            return NAME;
 				        }
 <normal>{quote1}        {
-				            //strcpy(yylval.stval, yytext);
-				            yylval = yytext;
+				            yylval.s = yytext;
 				            return MESSAGE;
 				        }
 <normal>{quote2}        {
-				            //strcpy(yylval.stval, yytext);
-				            yylval = yytext;
+				            yylval.s = yytext;
 				            return MESSAGE;
 				        }
 <normal>[ \t]+          /* skip whitespaces */{}

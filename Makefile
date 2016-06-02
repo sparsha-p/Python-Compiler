@@ -1,6 +1,6 @@
 CC=g++ -g -Wall
-pyc.o: main.o pyyacc.o pylex.o
-	@$(CC) -DEXTERNC -I/. pylex.o pyyacc.o main.o -o pyc.o
+pyc.o: main.o pyyacc.o pylex.o dstruct.o
+	@$(CC) -DEXTERNC -I/. pylex.o pyyacc.o dstruct.o main.o -o pyc.o
 pylex.o: pyparser.l
 	@flex pyparser.l
 	@mv lex.yy.c pylex.cxx
@@ -11,6 +11,8 @@ pyyacc.o: pyparser.y
 	@$(CC) -c pyyacc.cxx -o pyyacc.o
 main.o: main.c
 	@$(CC) -c main.c -o main.o
+dstruct.o:dstruct.c
+	@$(CC) -c dstruct.c -o dstruct.o
             
 clean: 
 	@rm -rf *.o
@@ -21,8 +23,11 @@ clean:
 	@rm -rf *.js
 	@rm -rf *.pyc
 
-run:
+level1:
 	@./pyc.o palindromeString.py test.js
+
+level2:
+	@./pyc.o kmp.py test.js
 
 test:
 	@./pyc.o test.py test.js
