@@ -28,6 +28,9 @@ level1:
 
 level2:
 	@./pyc.o kmp.py test.js
-
+	
+level3:
+	@./pyc.o arithmetic.py test.js
+    
 test:
 	@./pyc.o test.py test.js

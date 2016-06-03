@@ -17,8 +17,8 @@
 %s normal
 			
 identifier      [_a-zA-Z][_a-zA-Z0-9]*
-integer			[0-9]*
-defined         "elif"|"global"|"assert"|"else"|"except"|"pass"|"exec"|"raise"|"finally"|"is"|"lambda"|"try"|"del"|"yield"
+integer			[0-9]+
+defined         "global"|"assert"|"except"|"pass"|"exec"|"raise"|"finally"|"is"|"lambda"|"try"|"del"|"yield"
 operator "<"|">"|"=="|">="|"<="|"!="
 augassign "+="|"-="|"*="|"/="
 quote1          "\'"[^'\\]*"\'"
@@ -76,6 +76,14 @@ quote2          "\""[^"\\]*"\""
 							yylval.i = indent_level/4;
 							return IF;
 						}
+<normal>else            {
+                            yylval.i = indent_level/4;
+                            return ELSE;    
+                        }
+<normal>elif            {
+                            yylval.i = indent_level/4;
+                            return ELIF;                        
+                        }       
 <normal>while           {	
 							yylval.i = indent_level/4;
 							return WHILE;
@@ -89,6 +97,10 @@ quote2          "\""[^"\\]*"\""
 							yylval.i = indent_level/4;	
 							return RETURN;	
 						}
+<normal>continue        {
+                            yylval.i = indent_level/4;
+                            return CONTINUE;
+                        }
 <normal>not				return NOT;
 <normal>and				return AND;
 <normal>or				return OR;
@@ -135,6 +147,10 @@ quote2          "\""[^"\\]*"\""
 							yylval.s = yytext;
 							return STAR;
 						}
+<normal>"/"             {
+                            yylval.s = yytext;
+                            return DIVIDE;
+                        }
 <normal>{defined}       {
 				            yylval.s = yytext;
 				            return DEFINED;
