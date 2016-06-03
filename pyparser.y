@@ -18,9 +18,9 @@
 %token NAME
 %token INDENT DEDENT
 %token PRINT
-%token DEF FOR WHILE IF
+%token DEF FOR WHILE IF ELSE ELIF
 %token BREAK CONTINUE RETURN
-%token OPERA IN NOT OR AND STAR EQ
+%token OPERA IN NOT OR AND STAR DIVIDE EQ
 %token AUGASSIGN
 %token LBRACE RBRACE LBRACKET RBRACKET COLON DOT COMMA
 %token SUB ADD
@@ -61,16 +61,22 @@ simple_stmt: small_stmt NEWLINE
 ;
 small_stmt: flow_stmt { $$ = $1; }
 	| print_stmt { $$ = $1; }
+	| continue_stmt { $$ = $1; }
 	| expr_stmt { $$ = $1; }
 ;
 
 flow_stmt: return_stmt { $$ = $1; }
 ;
-print_stmt: PRINT NAME 
+print_stmt: PRINT expr 
 	{
 		$$.i = $1.i; 
 		$$.s = "console.log(" + $2.s + ")"; 
 	}
+;
+continue_stmt: CONTINUE { 
+        $$.i = $1.i;
+        $$.s = "continue"; 
+    }
 ;
 expr_stmt: test_list AUGASSIGN test_list 
 	{ 
@@ -91,12 +97,20 @@ return_stmt: RETURN flag
 		$$.i = $1.i; 
 		$$.s = "return " + $2.s; 
 	}
+	| RETURN variable
+	{
+	    $$.i = $1.i;
+	    $$.s = "return " + $2.s;
+	}
 ;
 flag: TRUE { $$.s = "true"; }
 	| FALSE { $$.s = "false"; }
 ;
 
 compound_stmt: for_stmt { $$ = $1; }
+    | if_elif_else_stmt { $$ = $1; }
+    | if_elif_stmt { $$ = $1; }
+    | if_else_stmt { $$ = $1; }
 	| if_stmt { $$ = $1; }
 	| funcdef { $$ = $1; }
 	| while_stmt {$$ = $1; }
@@ -129,7 +143,47 @@ for_stmt: FOR exprlist IN test_list COLON suite
 exprlist: NAME { $$.s = $1.s; }
 	| NAME COMMA NAME { $$.s = $1.s + $2.s + $3.s; }
 ;
-
+/* if-elif-else */
+if_elif_else_stmt: IF test COLON suite elif_stmt else_stmt
+    {
+        $$.i = $1.i;
+        $$.s = "if (" + $2.s + ")" + $4.s + $5.s + $6.s;   
+    }
+;
+elif_stmt: ELIF test COLON suite
+    {
+        string tmp;
+		addTab(tmp, $1.i);
+        $$.s = tmp + "else if (" + $2.s + ")" + $4.s;   
+    }
+    | elif_stmt ELIF test COLON suite 
+    {
+        string tmp;
+		addTab(tmp, $2.i);
+        $$.s = $1.s + tmp + "else if (" + $3.s + ")" + $5.s;
+    }
+;
+else_stmt: ELSE COLON suite
+    {
+        string tmp;
+		addTab(tmp, $1.i);
+        $$.s = tmp + "else" + $3.s;    
+    }
+;
+/* if-elif */
+if_elif_stmt: IF test COLON suite elif_stmt
+    {
+        $$.i = $1.i;
+        $$.s = "if (" + $2.s + ")" + $4.s + $5.s;   
+    }
+;
+/* if-else */
+if_else_stmt: IF test COLON suite else_stmt
+    {
+        $$.i = $1.i;
+        $$.s = "if (" + $2.s + ")" + $4.s + $5.s;   
+    }
+;
 /* if */
 if_stmt: IF test COLON suite
 	{
@@ -185,6 +239,16 @@ expr: term { $$ = $1; }
 		$$.i = $1.i; 
 		$$.s = $1.s + $2.s + $3.s;
 	}
+	| term STAR expr
+	{
+		$$.i = $1.i; 
+		$$.s = $1.s + $2.s + $3.s;
+	}
+	| term DIVIDE expr
+	{
+		$$.i = $1.i; 
+		$$.s = $1.s + $2.s + $3.s;
+	}
 ;
 term: factor { $$ = $1; }
 	| factor STAR term
@@ -195,13 +259,32 @@ term: factor { $$ = $1; }
 ;	
 factor: atom { $$ = $1; }
 ;
-atom: LBRACE expr RBRACE
+atom: LBRACE test RBRACE
+    {
+        $$.s = $1.s + $2.s + $3.s;
+    }
+    | LBRACE expr RBRACE
 	{
 		$$.s = $1.s + $2.s + $3.s;
+	}
+	| LBRACKET RBRACKET
+	{
+	    $$.s = $1.s + $2.s;
 	}
 	| LBRACKET expr RBRACKET
 	{
 		$$.s = $1.s + $2.s + $3.s;
+	}
+	| expr DOT NAME LBRACE RBRACE
+	{
+	    if ($3.s == "isdigit") {
+	        $$.i = $1.i;
+	        $$.s = "!isNaN(" + $1.s + ")";
+	    } else if ($1.s == "pop") {
+			$$.s = $1.s + $2.s + "pop" + $4.s + $5.s;
+		} else {
+		    $$.s = $1.s + $2.s + $3.s + $4.s + $5.s;
+		}
 	}
 	| expr DOT expr 
 	{
@@ -223,6 +306,12 @@ func_call: NAME LBRACE expr RBRACE
 			$$.s = $3.s;
 		} else if ($1.s == "append") {
 			$$.s = "push" + $2.s + $3.s + $4.s;
+		} else if ($1.s == "ord") {
+		    $$.s = $3.s + ".charCodeAt" + $2.s + $4.s; 
+		} else if ($1.s == "float") {
+		    $$.s = "parseFloat" + $2.s + $3.s + $4.s; 
+		} else if ($1.s == "str") {
+		    $$.s = $3.s + ".toString" + $2.s + $4.s; 
 		} else {
 			$$.s = $1.s + $2.s + $3.s + $4.s;
 		}
@@ -232,6 +321,11 @@ array_call: NAME LBRACKET expr RBRACKET
 	{
 		$$.i = $1.i;
 		$$.s = $1.s + $2.s + $3.s + $4.s;
+	}
+	| NAME LBRACKET expr COLON expr RBRACKET
+	{
+	    $$.i = $1.i;
+	    $$.s = $1.s + ".slice(" + $3.s + "," + $5.s + ")"; 
 	}
 ;
 variable: NAME { $$ = $1; }
