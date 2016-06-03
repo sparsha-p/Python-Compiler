@@ -1,16 +1,16 @@
 %{  
-    #include "dstruct.h"
-    #ifndef YYSTYPE
+	#include "dstruct.h"
+	#ifndef YYSTYPE
 	#define YYSTYPE line
 	#endif
-    
-    extern int  yylineno;
-    extern char yytext[];
-    int indent_level = 0;
-    extern FILE* outFile_p;
-    int noerror=1;
-    int yylex(void);
-    void yyerror(char* msg);
+	
+	extern int  yylineno;
+	extern char yytext[];
+	int indent_level = 0;
+	extern FILE* outFile_p;
+	int noerror=1;
+	int yylex(void);
+	void yyerror(char* msg);
 %}
 %token QUOTED
 %token DEFINED
@@ -37,9 +37,9 @@ single_input: input
 ;
 
 input: /* empty */ 
-     | input NEWLINE { $$.s = $1.s + ";" + $2.s; }
-     | input stmt    { $$.s = $1.s + $2.s; }
-     | input error {}
+	 | input NEWLINE { $$.s = $1.s + ";" + $2.s; }
+	 | input stmt	{ $$.s = $1.s + $2.s; }
+	 | input error {}
 ;
 
 stmt: simple_stmt 
@@ -74,9 +74,9 @@ print_stmt: PRINT expr
 	}
 ;
 continue_stmt: CONTINUE { 
-        $$.i = $1.i;
-        $$.s = "continue"; 
-    }
+		$$.i = $1.i;
+		$$.s = "continue"; 
+	}
 ;
 expr_stmt: test_list AUGASSIGN test_list 
 	{ 
@@ -99,8 +99,8 @@ return_stmt: RETURN flag
 	}
 	| RETURN variable
 	{
-	    $$.i = $1.i;
-	    $$.s = "return " + $2.s;
+		$$.i = $1.i;
+		$$.s = "return " + $2.s;
 	}
 ;
 flag: TRUE { $$.s = "true"; }
@@ -108,9 +108,9 @@ flag: TRUE { $$.s = "true"; }
 ;
 
 compound_stmt: for_stmt { $$ = $1; }
-    | if_elif_else_stmt { $$ = $1; }
-    | if_elif_stmt { $$ = $1; }
-    | if_else_stmt { $$ = $1; }
+	| if_elif_else_stmt { $$ = $1; }
+	| if_elif_stmt { $$ = $1; }
+	| if_else_stmt { $$ = $1; }
 	| if_stmt { $$ = $1; }
 	| funcdef { $$ = $1; }
 	| while_stmt {$$ = $1; }
@@ -145,44 +145,44 @@ exprlist: NAME { $$.s = $1.s; }
 ;
 /* if-elif-else */
 if_elif_else_stmt: IF test COLON suite elif_stmt else_stmt
-    {
-        $$.i = $1.i;
-        $$.s = "if (" + $2.s + ")" + $4.s + $5.s + $6.s;   
-    }
+	{
+		$$.i = $1.i;
+		$$.s = "if (" + $2.s + ")" + $4.s + $5.s + $6.s;   
+	}
 ;
 elif_stmt: ELIF test COLON suite
-    {
-        string tmp;
+	{
+		string tmp;
 		addTab(tmp, $1.i);
-        $$.s = tmp + "else if (" + $2.s + ")" + $4.s;   
-    }
-    | elif_stmt ELIF test COLON suite 
-    {
-        string tmp;
+		$$.s = tmp + "else if (" + $2.s + ")" + $4.s;   
+	}
+	| elif_stmt ELIF test COLON suite 
+	{
+		string tmp;
 		addTab(tmp, $2.i);
-        $$.s = $1.s + tmp + "else if (" + $3.s + ")" + $5.s;
-    }
+		$$.s = $1.s + tmp + "else if (" + $3.s + ")" + $5.s;
+	}
 ;
 else_stmt: ELSE COLON suite
-    {
-        string tmp;
+	{
+		string tmp;
 		addTab(tmp, $1.i);
-        $$.s = tmp + "else" + $3.s;    
-    }
+		$$.s = tmp + "else" + $3.s;	
+	}
 ;
 /* if-elif */
 if_elif_stmt: IF test COLON suite elif_stmt
-    {
-        $$.i = $1.i;
-        $$.s = "if (" + $2.s + ")" + $4.s + $5.s;   
-    }
+	{
+		$$.i = $1.i;
+		$$.s = "if (" + $2.s + ")" + $4.s + $5.s;   
+	}
 ;
 /* if-else */
 if_else_stmt: IF test COLON suite else_stmt
-    {
-        $$.i = $1.i;
-        $$.s = "if (" + $2.s + ")" + $4.s + $5.s;   
-    }
+	{
+		$$.i = $1.i;
+		$$.s = "if (" + $2.s + ")" + $4.s + $5.s;   
+	}
 ;
 /* if */
 if_stmt: IF test COLON suite
@@ -260,16 +260,16 @@ term: factor { $$ = $1; }
 factor: atom { $$ = $1; }
 ;
 atom: LBRACE test RBRACE
-    {
-        $$.s = $1.s + $2.s + $3.s;
-    }
-    | LBRACE expr RBRACE
+	{
+		$$.s = $1.s + $2.s + $3.s;
+	}
+	| LBRACE expr RBRACE
 	{
 		$$.s = $1.s + $2.s + $3.s;
 	}
 	| LBRACKET RBRACKET
 	{
-	    $$.s = $1.s + $2.s;
+		$$.s = $1.s + $2.s;
 	}
 	| LBRACKET expr RBRACKET
 	{
@@ -277,13 +277,13 @@ atom: LBRACE test RBRACE
 	}
 	| expr DOT NAME LBRACE RBRACE
 	{
-	    if ($3.s == "isdigit") {
-	        $$.i = $1.i;
-	        $$.s = "!isNaN(" + $1.s + ")";
-	    } else if ($1.s == "pop") {
+		if ($3.s == "isdigit") {
+			$$.i = $1.i;
+			$$.s = "!isNaN(" + $1.s + ")";
+		} else if ($1.s == "pop") {
 			$$.s = $1.s + $2.s + "pop" + $4.s + $5.s;
 		} else {
-		    $$.s = $1.s + $2.s + $3.s + $4.s + $5.s;
+			$$.s = $1.s + $2.s + $3.s + $4.s + $5.s;
 		}
 	}
 	| expr DOT expr 
@@ -307,11 +307,11 @@ func_call: NAME LBRACE expr RBRACE
 		} else if ($1.s == "append") {
 			$$.s = "push" + $2.s + $3.s + $4.s;
 		} else if ($1.s == "ord") {
-		    $$.s = $3.s + ".charCodeAt" + $2.s + $4.s; 
+			$$.s = $3.s + ".charCodeAt" + $2.s + $4.s; 
 		} else if ($1.s == "float") {
-		    $$.s = "parseFloat" + $2.s + $3.s + $4.s; 
+			$$.s = "parseFloat" + $2.s + $3.s + $4.s; 
 		} else if ($1.s == "str") {
-		    $$.s = $3.s + ".toString" + $2.s + $4.s; 
+			$$.s = $3.s + ".toString" + $2.s + $4.s; 
 		} else {
 			$$.s = $1.s + $2.s + $3.s + $4.s;
 		}
@@ -324,8 +324,8 @@ array_call: NAME LBRACKET expr RBRACKET
 	}
 	| NAME LBRACKET expr COLON expr RBRACKET
 	{
-	    $$.i = $1.i;
-	    $$.s = $1.s + ".slice(" + $3.s + "," + $5.s + ")"; 
+		$$.i = $1.i;
+		$$.s = $1.s + ".slice(" + $3.s + "," + $5.s + ")"; 
 	}
 ;
 variable: NAME { $$ = $1; }
@@ -358,7 +358,7 @@ stmt_plus: stmt { $$ = $1; }
 ;
 %%
 extern void yyerror(char* msg) {
-    noerror=0;
-    if(strcmp(msg,"syntax error"))
-        printf(" Syntax Error in Line : %d : %s\n",yylineno,msg);
+	noerror=0;
+	if(strcmp(msg,"syntax error"))
+		printf(" Syntax Error in Line : %d : %s\n",yylineno,msg);
 }
