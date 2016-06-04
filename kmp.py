@@ -5,6 +5,8 @@
 def KMP(text, pattern):
 
     # allow indexing into pattern and protect against change during yield
+    if (not isinstance(text, str)) or (not isinstance(pattern, str)):
+    	return False
     pattern = list(pattern)
 
     # build table of shift amounts
@@ -20,6 +22,7 @@ def KMP(text, pattern):
     # do the actual search
     startPos = 0
     matchLen = 0
+    result = []
     l = len(text)
     for c in range(l):
         while matchLen == len(pattern) or matchLen >= 0 and pattern[matchLen] != text[c]:
@@ -27,4 +30,10 @@ def KMP(text, pattern):
             matchLen -= shifts[matchLen]
         matchLen += 1
         if matchLen == len(pattern):
-            print startPos
+            result.append(startPos)
+	l = len(result)
+	if l==0:
+		return False
+	else:
+		for i in range(l):
+			print result[i]

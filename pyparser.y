@@ -216,7 +216,7 @@ and_test: not_test { $$ = $1; }
 		$$.s = $1.s + " && " + $3.s; 
 	}
 ;
-not_test: NOT not_test { $$.s = "!" + $2.s; }
+not_test: NOT not_test { $$.s = "!(" + $2.s + ")"; }
 	| comparison { $$ = $1; }
 ;
 comparison: expr { $$ = $1; }
@@ -314,6 +314,17 @@ func_call: NAME LBRACE expr RBRACE
 			$$.s = $3.s + ".toString" + $2.s + $4.s; 
 		} else {
 			$$.s = $1.s + $2.s + $3.s + $4.s;
+		}
+	}
+	| NAME LBRACE expr COMMA expr RBRACE
+	{
+		$$.i = $1.i;
+		if ($1.s == "isinstance") {
+			if ($5.s == "str") {
+				$$.s = "typeof(" + $3.s + ")==" + "\"string\"";
+			} else {}
+		} else {
+			$$.s = $1.s + $2.s + $3.s + $4.s + $5.s + $6.s;		
 		}
 	}
 ;
