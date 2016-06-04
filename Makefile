@@ -24,13 +24,13 @@ clean:
 	@rm -rf *.pyc
 
 level1:
-	@./pyc.o palindromeString.py test.js
+	@./pyc.o palindrome.py palindrome.js
 
 level2:
-	@./pyc.o kmp.py test.js
+	@./pyc.o kmp.py kmp.js
 	
 level3:
-	@./pyc.o arithmetic.py test.js
+	@./pyc.o arithmetic.py arithmetic.js
     
 test:
 	@./pyc.o test.py test.js
